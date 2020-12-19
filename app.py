@@ -1,6 +1,7 @@
 import sys
 import getopt
 import random
+import csv
 from npc import Npc
 
 
@@ -12,6 +13,8 @@ argumentsHelp = """
 *   Options:
 *   -g, --gender [any,male,female]: used to be specific about npc gender
 *   -c, --count <int>: used to tell the app how many npcs you want
+*   -o, --output: flag to output as a csv file
+*   -f, --fileName <string>: file name to use for export file
 *
 """
 
@@ -27,11 +30,25 @@ def validateGender(value):
     if value.lower() not in validGenders:
         raise ValueError(f'{value}, is not a valid gender for this app')
 
+def makeCSV(npcs, fileName = 'npcs.csv'):
+    fieldnames = vars(npcs[0]).keys()
+    with open(fileName, 'w', newline='') as npcFile:
+        writer = csv.DictWriter(npcFile, fieldnames=fieldnames)
+        writer.writeheader()
+        for npc in npcs:
+            writer.writerow(vars(npc))
+
+def printToTerminal(npcs):
+    for npc in npcs:
+        print(npc)
+
 def main(argv):
     appGender = 'any'
     appRequiredNPCCount = 1
+    export = False
+    exportFileName = None
     try:
-        opts, args = getopt.getopt(argv, "hc:g:", ["count=", "gender="])
+        opts, args = getopt.getopt(argv, "hoc:g:f:", ["count=", "gender=", 'output', 'fileName='])
     except getopt.GetoptError:
         print(argumentsHelp)
         sys.exit(2)
@@ -49,13 +66,27 @@ def main(argv):
                     appGender = arg.lower()
             except:
                 appGender = 'any'
+        
+        if opt in ('-o', '-output'):
+            export = True
+        
+        if opt in ('-f', '--fileName'):
+            exportFileName = arg
     
+    npcs = []
     for x in range(0, appRequiredNPCCount):
         localGender = appGender
         if localGender == 'any':
             localGender = random.choice(['male', 'female'])
-        npc = Npc(localGender)
-        print (npc)
+        npcs.append(Npc(localGender))
+    
+    if(export):
+        if(exportFileName):
+            makeCSV(npcs, exportFileName)
+        else:
+            makeCSV(npcs)
+    else:
+        printToTerminal(npcs)
     
 
 if __name__ == "__main__":
